@@ -52,10 +52,10 @@ SELECT
   s.*
 FROM employees e
 	INNER JOIN salaries s ON (e.emp_no = s.emp_no)
-WHERE e.emp_no = ? AND s.to_date='9999-01-01'
+WHERE e.emp_no = ?
 `;
     const rows = await conn.query(SQL, [empleado.emp_no]);
-    return rows[0];
+    return rows;
   } catch (err) {
     return Promise.reject(err);
   } finally {
@@ -168,7 +168,7 @@ module.exports.updateSalary = async function (emp_no, salary) {
     // SQL DML cómo si fuera una única operación.
     await conn.beginTransaction();
     await conn.query(
-      `UPDATE salaries s SET s.to_date=now() WHERE s.to_date='9999-01-01' and s.emp_no=?`,
+      `UPDATE salaries SET to_date=now() WHERE to_date='9999-01-01' and emp_no=?`,
       [emp_no]
     );
     await conn.query(
@@ -176,7 +176,7 @@ module.exports.updateSalary = async function (emp_no, salary) {
       [emp_no, salary]
     );
     await conn.commit(); // si todas las sentencias SQL fueron correctas entonces confirmamos los cambios.
-    return rows;
+    return {};
   } catch (err) {
     if (conn) await conn.rollback(); // si falló una de las sentencias SQL entonces volvemos atras los cambios.
     return Promise.reject(err);

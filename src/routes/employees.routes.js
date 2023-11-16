@@ -135,8 +135,8 @@ router.delete("/:id", checkEmp, async (req, res) => {
   }
 });
 
-// GET /api/v1/empleados/changesalary/:id
-router.get("/changesalary/:id", checkEmp, async (req, res) => {
+// PUT /api/v1/empleados/changesalary/:id
+router.put("/changesalary/:id", checkEmp, async (req, res) => {
   const { emp } = res.locals;
   const { salary } = req.body;
   const s = await DB.Employees.updateSalary(emp.emp_no, salary);

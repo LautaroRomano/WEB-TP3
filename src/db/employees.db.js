@@ -48,8 +48,12 @@ module.exports.getSalary = async function (empleado) {
     conn = await pool.getConnection();
     const SQL = `
 SELECT 
-  e.*,
-  s.*
+  e.emp_no AS emp_no_employee,
+  e.otro_campo1,
+  e.otro_campo2,
+  s.emp_no AS emp_no_salary,
+  s.otro_campo3,
+  s.otro_campo4
 FROM employees e
 	INNER JOIN salaries s ON (e.emp_no = s.emp_no)
 WHERE e.emp_no = ?

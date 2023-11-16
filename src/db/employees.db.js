@@ -48,12 +48,14 @@ module.exports.getSalary = async function (empleado) {
     conn = await pool.getConnection();
     const SQL = `
 SELECT 
-  e.emp_no AS emp_no_employee,
-  e.otro_campo1,
-  e.otro_campo2,
-  s.emp_no AS emp_no_salary,
-  s.otro_campo3,
-  s.otro_campo4
+  e.emp_no,
+  e.first_name,
+  e.last_name,
+  e.gender,
+  e.hire_date,
+  s.salary,
+  s.from_date,
+  s.to_date
 FROM employees e
 	INNER JOIN salaries s ON (e.emp_no = s.emp_no)
 WHERE e.emp_no = ?
@@ -83,11 +85,11 @@ module.exports.add = async function (empleado) {
     const SQL = `INSERT INTO ${TABLE} (emp_no,birth_date, first_name,last_name,gender,hire_date) VALUES(?,?,?,?,?,?)`;
     const params = [];
     params[0] = empleado.emp_no;
-    params[1] = empleado.birth_date;
+    params[1] = new Date(empleado.birth_date);
     params[2] = empleado.first_name;
     params[3] = empleado.last_name;
     params[4] = empleado.gender;
-    params[5] = empleado.hire_date;
+    params[5] = new Date(empleado.hire_date);
     const rows = await conn.query(SQL, params);
     await conn.commit(); // si todas las sentencias SQL fueron correctas entonces confirmamos los cambios.
     return rows;
@@ -141,11 +143,11 @@ module.exports.update = async function (empleado) {
 
     const SQL = `UPDATE ${TABLE}  SET birth_date=?, first_name=?, last_name=?, gender=?, hire_date=? WHERE emp_no=?`;
     const params = [];
-    params[0] = empleado.birth_date;
+    params[0] = new Date(empleado.birth_date);
     params[1] = empleado.first_name;
     params[2] = empleado.last_name;
     params[3] = empleado.gender;
-    params[4] = empleado.hire_date;
+    params[4] = new Date(empleado.hire_date);
     params[5] = empleado.emp_no;
     const rows = await conn.query(SQL, params);
     await conn.commit(); // si todas las sentencias SQL fueron correctas entonces confirmamos los cambios.

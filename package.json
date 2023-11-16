@@ -6,7 +6,7 @@
   "scripts": {
     "start": "node index.js",
     "dev": "nodemon index.js",
-    "test": "jest --detectOpenHandles --forceExit",
+    "test": "jest  --forceExit",
     "test:c": "jest --coverage --detectOpenHandles --forceExit",
     "test:watch": "jest --watchAll --detectOpenHandles --forceExit"
   },

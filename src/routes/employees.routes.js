@@ -86,6 +86,14 @@ router.post("/", async (req, res) => {
   }
 });
 
+// PUT /api/v1/empleados/changesalary/:id
+router.put("/changesalary/:id", checkEmp, async (req, res) => {
+  const { emp } = res.locals;
+  const { salary } = req.body;
+  const s = await DB.Employees.updateSalary(emp.emp_no, salary);
+  res.status(200).json(s);
+});
+
 // PUT /api/v1/empleados/:id
 router.put("/:id", checkEmp, async (req, res) => {
   const { birth_date, first_name, last_name, gender, hire_date } = req.body;
@@ -135,16 +143,8 @@ router.delete("/:id", checkEmp, async (req, res) => {
   }
 });
 
-// PUT /api/v1/empleados/changesalary/:id
-router.put("/changesalary/:id", checkEmp, async (req, res) => {
-  const { emp } = res.locals;
-  const { salary } = req.body;
-  const s = await DB.Employees.updateSalary(emp.emp_no, salary);
-  res.status(200).json(s);
-});
-
 // GET /api/v1/empleados/changedepartment/:id
-router.get("/changedepartment/:id", checkEmp, async (req, res) => {
+router.put("/changedepartment/:id", checkEmp, async (req, res) => {
   const { emp } = res.locals;
   const { dept_no } = req.body;
   const s = await DB.Employees.updateDepartment(emp.emp_no, dept_no);

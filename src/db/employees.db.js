@@ -59,6 +59,7 @@ SELECT
 FROM employees e
 	INNER JOIN salaries s ON (e.emp_no = s.emp_no)
 WHERE e.emp_no = ?
+order by from_date desc
 `;
     const rows = await conn.query(SQL, [empleado.emp_no]);
     return rows;
@@ -203,7 +204,7 @@ module.exports.updateDepartment = async function (emp_no, dept_no) {
     conn = await pool.getConnection();
     await conn.beginTransaction();
     await conn.query(
-      `UPDATE dept_emp de SET de.to_date=now() WHERE de.to_date='9999-01-01' and de.emp_no=? and de.dept_no=?`,
+      `UPDATE dept_emp de SET de.to_date=now() WHERE de.to_date='9999-01-01' and de.emp_no=?`,
       [emp_no, dept_no]
     );
     await conn.query(
@@ -211,9 +212,89 @@ module.exports.updateDepartment = async function (emp_no, dept_no) {
       [emp_no, dept_no]
     );
     await conn.commit(); // si todas las sentencias SQL fueron correctas entonces confirmamos los cambios.
-    return rows;
+    return {};
   } catch (err) {
     if (conn) await conn.rollback(); // si falló una de las sentencias SQL entonces volvemos atras los cambios.
+    return Promise.reject(err);
+  } finally {
+    if (conn) await conn.release();
+  }
+};
+
+/**
+ * sql 6
+* Retorna el historial de departamentos donde trabajó
+* @returns 
+*/
+module.exports.getHistorialDeptosById = async function (emp_no) {
+  let conn;
+  try {
+    conn = await pool.getConnection();
+    const SQL = `SELECT E.emp_no, E.last_name, E.first_name,
+                D.dept_no, D.dept_name, 
+                DE.from_date, DE.to_date
+                FROM departments AS D, employees AS E, dept_emp AS DE
+                WHERE E.emp_no = DE.emp_no AND D.dept_no = DE.dept_no AND E.emp_no = ?
+                ORDER BY to_date`;
+    const rows = await conn.query(SQL, [emp_no]);
+    return rows;
+  } catch (err) {
+    return Promise.reject(err);
+  } finally {
+    if (conn) await conn.release();
+  }
+};
+
+module.exports.deleteSalary = async function (emp_no, from_date) {
+  let conn;
+  try {
+    conn = await pool.getConnection();
+    const SQL = `delete from salaries where emp_no = ? and from_date = ?`;
+    const rows = await conn.query(SQL, [emp_no, from_date]);
+    return rows;
+  } catch (err) {
+    return Promise.reject(err);
+  } finally {
+    if (conn) await conn.release();
+  }
+};
+
+module.exports.setLastSalary = async function (emp_no, from_date) {
+  let conn;
+  try {
+    conn = await pool.getConnection();
+    const SQL = `update salaries set to_date='9999-01-01' where from_date = ? and emp_no = ?`;
+    const rows = await conn.query(SQL, [from_date, emp_no]);
+    return rows;
+  } catch (err) {
+    return Promise.reject(err);
+  } finally {
+    if (conn) await conn.release();
+  }
+};
+
+module.exports.deleteEmpDep = async function (emp_no, to_date) {
+  let conn;
+  try {
+    conn = await pool.getConnection();
+    const SQL = `delete from dept_emp where emp_no = ? and to_date = ?`;
+    const rows = await conn.query(SQL, [emp_no, to_date]);
+    return rows;
+  } catch (err) {
+    return Promise.reject(err);
+  } finally {
+    if (conn) await conn.release();
+  }
+};
+
+module.exports.setLastEmpDep = async function (emp_no, from_date) {
+  let conn;
+  try {
+    conn = await pool.getConnection();
+    const SQL = `update dept_emp set to_date='9999-01-01' where from_date = ? and emp_no = ?`;
+    const rows = await conn.query(SQL, [from_date, emp_no]);
+    return rows;
+  } catch (err) {
     return Promise.reject(err);
   } finally {
     if (conn) await conn.release();

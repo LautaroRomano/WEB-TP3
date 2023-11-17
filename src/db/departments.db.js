@@ -151,17 +151,17 @@ module.exports.update = async function (departamento) {
  * @param {Object} dept_no
  * @returns
  */
-module.exports.getManagers = async function (dept_no) {
+module.exports.getManagers = async function (dep) {
   let conn;
   try {
     conn = await pool.getConnection();
     await conn.beginTransaction();
 
-    const SQL = `SELECT d.dept_name, e.first_name, e.last_name, dm.from_date, dm.to_date FROM ${TABLE} as d 
+    const SQL = `SELECT d.dept_no,d.dept_name, e.first_name, e.last_name, dm.from_date, dm.to_date FROM ${TABLE} as d 
     JOIN dept_manager as dm ON dm.dept_no = d.dept_no
     JOIN employees as e ON dm.emp_no = e.emp_no
-    WHERE dept_no=?`;
-    const rows = await conn.query(SQL, [dept_no]);
+    WHERE d.dept_no=?`;
+    const rows = await conn.query(SQL, [dep.dept_no]);
     await conn.commit(); // si todas las sentencias SQL fueron correctas entonces confirmamos los cambios.
     return rows;
   } catch (err) {

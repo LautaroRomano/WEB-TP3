@@ -1,6 +1,7 @@
 require("dotenv").config();
 const app = require("../src/app");
 const request = require("supertest");
+const { Employees } = require("../src/db");
 
 describe("Rest API Empleados", () => {
   /* TIMEOUT ERR 
@@ -73,36 +74,80 @@ describe("Rest API Empleados", () => {
 
     //Comprobar que después de ejecutar la api el nuevo registro de ese empleado con el campo from_date con la fecha de hoy y el campo to_date con el valor ‘9999-01-01’.
     expect(esHoy(afterLastSalary.from_date)).toBe(true)
+
+    //Dejamos lo datos como estaban antes de las pruebas
+    await Employees.deleteSalary(10001, afterLastSalary.from_date.split('T')[0])
+    await Employees.setLastSalary(10001, beforeLastSalary.from_date.split('T')[0])
   });
 
-  /* FALTA HACER ESTO!! 
-  it("PUT /api/v1/empleados/changedepartment/10001 Comprobar API de modificación de departamento", async () => {
-    const beforeDepartment = (await request(app).get("/api/v1/empleados/10001/salaries")).body;
-    const beforeLastSalary = beforeDepartment.find(sal => sal.to_date.includes('9999-01-01'))
-    const response = await request(app)
-      .put("/api/v1/empleados/changedepartment/10001")
-      .send({
-        dept_no: "d009",
-      });
+  //El sistema debe permitir mover un empleado del Departamento actual donde trabaja a otro Departamento
+  it("PUT /api/v1/empleados/changedepartment/10010", async () => {
+    const dato = { emp_no: 10001, dept_no: "d009" };
 
-    //Comprobar que los códigos de estado del protocolo http sean correctos
-    expect(response.statusCode).toBe(200);
-    // Verificar que los datos ingresados sean correctos
-    expect(response.body).toEqual({});
+    //3
+    //Verificar existencia del empleado
+    const prueba3_1 = await request(app).get(`/api/v1/empleados/${dato.emp_no}`)
+    expect(prueba3_1).toBeDefined();
+    expect(prueba3_1.statusCode).toBe(200);
+    expect(prueba3_1.body.emp_no).toStrictEqual(dato.emp_no);
 
-    const afterSalaries = (await request(app).get("/api/v1/empleados/10001/salaries")).body;
-    const afterLastSalary = afterSalaries.find(sal => sal.to_date.includes('9999-01-01'))
+    //departmentsroutes.js 29 a 32
+    //Verificar existencia del departamento destino
+    const prueba3_2 = await request(app).get(`/api/v1/departamentos/${dato.dept_no}`)
+    expect(prueba3_2).toBeDefined();
+    expect(prueba3_2.statusCode).toBe(200);
+    expect(prueba3_2.body.dept_no).toStrictEqual(dato.dept_no);
 
-    //Comprobar que después de ejecutar la api existe un nuevo registro para ese empleado
-    expect(afterSalaries.length - beforeSalaries.length).toBe(1)
+    //6
+    //Cantidad de registros antes de la modificación
+    const prueba3_3 = await request(app).get(`/api/v1/empleados/depthistorial/${dato.emp_no}`)
+    expect(prueba3_3).toBeDefined();
+    expect(prueba3_3.statusCode).toBe(200);
+    const cant_antes = prueba3_3.body;
+    expect(cant_antes).toBeDefined();
 
-    //Comprobar que después de ejecutar la api el registro de ese empleado con el campo to_date con la fecha ‘9999-01-01’ cambió a la fecha de hoy.
-    const newBeforeLastSalary = afterSalaries.find(f => f.from_date == beforeLastSalary.from_date)
-    expect(esHoy(newBeforeLastSalary.to_date)).toBe(true)
+    //7
+    //Ejecución de la transferencia de un empleado a otro Departamento
+    const prueba3_4 = await request(app)
+      .put(`/api/v1/empleados/changedepartment/${dato.emp_no}`)
+      .send(dato);
+    expect(prueba3_4).toBeDefined();
+    expect(prueba3_4.statusCode).toBe(200);
 
-    //Comprobar que después de ejecutar la api el nuevo registro de ese empleado con el campo from_date con la fecha de hoy y el campo to_date con el valor ‘9999-01-01’.
-    expect(esHoy(afterLastSalary.from_date)).toBe(true)
-  }); */
+    //6
+    //Cantidad de registros luego de la modificación
+    const prueba3_5 = await request(app).get(`/api/v1/empleados/depthistorial/${dato.emp_no}`)
+    expect(prueba3_5).toBeDefined();
+    expect(prueba3_5.statusCode).toBe(200);
+    const cant_despues = prueba3_5.body;
+    expect(cant_despues).toBeDefined();
+
+    //Comprobamos que luego de la ejecución existe un nuevo registro de salario
+    expect(cant_despues.length).toStrictEqual(cant_antes.length + 1);
+
+    //Comprobamos los valores de los campos del nuevo registro
+    let date = new Date()
+    let day = date.getDate()
+    let month = date.getMonth() + 1 //Debido a que los valores de los meses van de 0 a 11
+    let year = date.getFullYear()
+
+    let fecha;
+    if (month < 10) fecha = `${year}-0${month}-${day}T03:00:00.000Z`
+    else fecha = `${year}-${month}-${day}T03:00:00.000Z`
+
+    const y = cant_despues.length - 1;
+    expect(cant_despues[y].from_date).toStrictEqual(fecha); // comprobamos que el campo from_date contenga la fecha de hoy
+    expect(cant_despues[y].to_date).toStrictEqual('9999-01-01T03:00:00.000Z'); //comprobamos que el campo to:date contenga la fecha: '9999-01-01'
+    expect(cant_despues[y].dept_no).toStrictEqual(dato.dept_no);
+
+    //Comprobamos que el campo to_date del registro anteúltimo contiene la fecha de hoy
+    const posM = cant_despues.length - 2; //luego de la Modificación la posicion del departamento anterior será una menos que el último registro (departamento actual)  pero debido a que el array comienza en 0 se restan 2.
+    expect(cant_despues[posM].to_date).toStrictEqual(fecha) //cant_despues contiene los registros posteriores a la modificación
+
+    //Dejamos lo datos como estaban antes de las pruebas
+    await Employees.deleteEmpDep(10001, '9999-01-01')
+    await Employees.setLastEmpDep(10001, cant_despues[y - 1].from_date.split('T')[0])
+  });
 
   it("GET /api/v1/empleados/1", async () => {
     const response = await request(app).get("/api/v1/empleados/1");

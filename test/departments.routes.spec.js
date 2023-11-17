@@ -140,4 +140,20 @@ describe("Rest API Departamentos", () => {
     expect(responseDelete).toBeDefined();
     expect(responseDelete.statusCode).toBe(204);
   });
+
+  //El sistema debe permitir obtener todos los jefes de un departamento dado:
+  it("GET /api/v1/departamentos/managers/d009", async () => {
+    const response = await request(app).get("/api/v1/departamentos/managers/d009");
+    expect(response).toBeDefined();
+    expect(response.statusCode).toBe(200);
+    const managers = response.body;
+    expect(managers).toBeDefined();
+    expect(Array.isArray(managers)).toBe(true); // Verificar que salary es un array
+    expect(managers.length).toBeGreaterThan(1);  // Verificar que el array tiene más de un elemento
+    //Comprobar que cada uno de los elementos del arreglo pertenece al empleado.
+    for (const manager of managers) {
+      expect(manager.dept_no).toBeDefined();
+      expect(manager.dept_no).toBe("d009");
+    }
+  });
 });

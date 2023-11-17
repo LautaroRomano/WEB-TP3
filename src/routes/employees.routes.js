@@ -151,4 +151,25 @@ router.put("/changedepartment/:id", checkEmp, async (req, res) => {
   res.status(200).json(s);
 });
 
+// GET /api/v1/empleados/depthistorial/:id
+router.get('/depthistorial/:id', async (req, res) => {
+  const historial = await DB.Employees.getHistorialDeptosById(req.params.id);
+  if (!historial) {
+    res.status(404).send('Empleado no encontrado!!!')
+    return
+  }
+  res.status(200).json(historial)
+});
+
+router.get('/jefe/depthistorial/:dept_no', async (req, res) => {
+  const historial = await DB.Employees.getHistorialJefesByDept_no(req.params.dept_no);
+  if (!historial) {
+    res.status(404).send('Departamento no encontrado!!!')
+    return
+  }
+  else {
+    res.status(200).json(historial)
+  }
+});
+
 module.exports = router;
